@@ -66,24 +66,24 @@ contract MinNumBet{
             // We try to see in the sorted array, which bet contains 
             // the smallest number that has not been repeated.
             bool notFound = true;
-            uint l = 0;
-            uint winningBet = 0;
-            while(notFound && l < betLength - 1){
-                if(sortedBets[l] == sortedBets[l+1]){
-                    l++;
+            uint winningBet;
+            uint i = 0;
+            do{
+                winningBet = sortedBets[i];
+                i++;
+                notFound = false;
+                while(i<betLength && winningBet == sortedBets[i]){
+                    i++;
+                    notFound = true;
                 }
-                else{
-                    notFound = false;
-                    winningBet = sortedBets[l];
-                }
+            } while(notFound && i<betLength);
+            if(notFound){
+                return 0;
             }
-            uint nrPlayers = currentSession.players.length;
-            for(l = 0; l < nrPlayers; l++){
-                address currentPlayer = currentSession.players[l];
-                uint currentBet = currentSession.playerToBet[currentPlayer];
-                if(currentBet == winningBet){
-                    winner = currentPlayer;
-                    break;
+            for(i = 0; i<currentSession.players.length; i++){
+                address currentPlayer = currentSession.players[i];
+                if(currentSession.playerToBet[currentPlayer] == winningBet){
+                    return currentPlayer;
                 }
             }
         }
