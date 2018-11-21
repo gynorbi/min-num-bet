@@ -6,4 +6,6 @@ MinNumBet.deployed().then(function(instance){return instance.placeBet(0,5,{value
 MinNumBet.deployed().then(function(instance){return instance.placeBet(0,6,{value:web3.toWei(3,'ether'),from:"0xaE07D1AF3Fd3595c9d2870e7EC2F37f6f8Bd5478"});});
 MinNumBet.deployed().then(function(instance){return instance.closeSession(0);});
 MinNumBet.deployed().then(function(instance){return instance.getWinner(0);});
-MinNumBet.deployed().then(function(instance){return instance.withdraw(0,{from:"0xaE07D1AF3Fd3595c9d2870e7EC2F37f6f8Bd5478"});});
+MinNumBet.deployed().then(function(instance){return instance.withdraw(0,{from:"0xe3bf1727e73d2d24dc5a9febea491a752a8c9895"});});
+
+web3.fromWei(web3.eth.getBalance("0x213075181111fD850c3aEFDa3Cb41fafcd238DCb"),'ether').toString()
