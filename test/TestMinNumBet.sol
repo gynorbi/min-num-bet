@@ -17,17 +17,25 @@ contract TestMinNumBet{
     function testCreateNewSessionMeansNotAllSessionsClosed() public {
         //arrange
         MinNumBet betting = new MinNumBet();
-        betting.createNewSession();
+        betting.createNewSession(1);
         bool expected = false;
         //act
         bool actual = betting.allSessionsClosed();
         //assert
         Assert.equal(actual, expected, "On a new session not all sessions are closed");
     }
+    function testCreateNewSessionWithZeroValue() public {
+        //arrange
+        MinNumBet betting = new MinNumBet();
+        //act
+        bool callSuccess = address(betting).call(bytes4(keccak256("createNewSession(uint)")), 0);
+        //assert
+        Assert.isFalse(callSuccess, "Can't create a session where the value is zero");
+    }
     function testClosingTheOneOpenSessionWithAtLeastOneBetMeansAllSessionsAreClosed() public {
         //arrange
         MinNumBet betting = new MinNumBet();
-        uint newSessionId = betting.createNewSession();
+        uint newSessionId = betting.createNewSession(1);
         // Adding bet, because it's not possible to close a session without bets
         betting.placeBet(newSessionId, 5);
         betting.closeSession(newSessionId);
@@ -40,7 +48,7 @@ contract TestMinNumBet{
     function testClosingTheOneOpenSessionWithNoBetsIsNotAllowed() public {
         //arrange
         MinNumBet betting = new MinNumBet();
-        uint newSessionId = betting.createNewSession();
+        uint newSessionId = betting.createNewSession(1);
         //act
         bool callSuccess = address(betting).call(bytes4(keccak256("closeSession(uint)")), newSessionId);
         //assert
@@ -49,7 +57,7 @@ contract TestMinNumBet{
     function testClosingAClosedSessionIsNotAllowed() public {
         //arrange
         MinNumBet betting = new MinNumBet();
-        uint newSessionId = betting.createNewSession();
+        uint newSessionId = betting.createNewSession(1);
         // Adding bet, because it's not possible to close a session without bets
         betting.placeBet(newSessionId, 5);
         // Close the session and try to close it again
@@ -63,30 +71,30 @@ contract TestMinNumBet{
     function testPlayerPlacesTwoBetsOnSameSessionNotAllowed() public {
         //arrange
         MinNumBet betting = new MinNumBet();
-        uint newSessionId = betting.createNewSession();
+        uint newSessionId = betting.createNewSession(1);
         betting.placeBet(newSessionId, 5);
         //act
-        bool callSuccess = address(betting).call(bytes4(keccak256("placeBet(uint256,uint256)")), newSessionId,6);
+        bool callSuccess = address(betting).call(bytes4(keccak256("placeBet(uint256,uint256)")), newSessionId,6,1 ether);
         //assert
         Assert.isFalse(callSuccess, "Placing two bets on the same session is not allowed");
     }
 
-    // function testPlayerPlacesBetOnClosedSessionNotAllowed() public {
-    //     //arrange
-    //     MinNumBet betting = new MinNumBet();
-    //     uint newSessionId = betting.createNewSession();
-    //     betting.placeBet(newSessionId, 5);
-    //     betting.closeSession(newSessionId);
-    //     //act
-    //     bool callSuccess = address(betting).call(bytes4(keccak256("placeBet(uint256,uint256)")), newSessionId,6);
-    //     //assert
-    //     Assert.isFalse(callSuccess, "Placing bet on closed session is not allowed");
-    // }
+    function testPlayerPlacesBetOnClosedSessionNotAllowed() public {
+        //arrange
+        MinNumBet betting = new MinNumBet();
+        uint newSessionId = betting.createNewSession(1);
+        betting.placeBet(newSessionId, 5);
+        betting.closeSession(newSessionId);
+        //act
+        bool callSuccess = address(betting).call(bytes4(keccak256("placeBet(uint256,uint256)")), newSessionId,6,1 ether);
+        //assert
+        Assert.isFalse(callSuccess, "Placing bet on closed session is not allowed");
+    }
 
     function testWinnerIsTheCorrectAddressWhenOneBet() public {
         //arrange
         MinNumBet betting = new MinNumBet();
-        uint newSessionId = betting.createNewSession();
+        uint newSessionId = betting.createNewSession(1);
         betting.placeBet(newSessionId, 5);
         betting.closeSession(newSessionId);
         //act

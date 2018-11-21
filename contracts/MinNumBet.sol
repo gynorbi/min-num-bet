@@ -7,6 +7,8 @@ contract MinNumBet{
         address winner;
         uint[] bets;
         address[] players;
+        uint value;
+        bool hasBeenPaid;
         mapping(address => uint) playerToBet;
         mapping(address => bool) playerHasPlacedBet;
 
@@ -22,8 +24,9 @@ contract MinNumBet{
         }
         return true;
     }
-    function createNewSession() public returns (uint) {
-        Session memory newSession = Session(true, msg.sender, 0, new uint[](0), new address[](0));
+    function createNewSession(uint value) public returns (uint) {
+        require(value > 0, "Can't create session with 0 value");
+        Session memory newSession = Session(true, msg.sender, 0, new uint[](0), new address[](0), value, false);
         return sessions.push(newSession) - 1;
     }
     function closeSession(uint sessionId) public {
@@ -35,10 +38,11 @@ contract MinNumBet{
         currentSession.isOpen = false;
     }
     
-    function placeBet(uint sessionId, uint number) public {
+    function placeBet(uint sessionId, uint number) public payable{
         Session storage currentSession = sessions[sessionId];
         require(currentSession.isOpen,"You can't place a bet on a closed session");
         require(!currentSession.playerHasPlacedBet[msg.sender],"You have already placed a bet in this session");
+        require(msg.value == currentSession.value * 1 ether, "In order to bet in this session you need to send the correct value in ether");
         currentSession.bets.push(number);
         currentSession.players.push(msg.sender);
         currentSession.playerToBet[msg.sender] = number;
@@ -49,6 +53,31 @@ contract MinNumBet{
         Session memory currentSession = sessions[sessionId];
         require(!currentSession.isOpen, "Session must be closed to have a winner.");
         return currentSession.winner;
+    }
+
+    function getNumberOfPlayers(uint sessionId) public view returns(uint){
+        Session memory currentSession = sessions[sessionId];
+        return currentSession.players.length;
+    }
+
+    function getSessionValue(uint sessionId) public view returns(uint){
+        Session memory currentSession = sessions[sessionId];
+        return currentSession.value;
+    }
+
+    function hasPlayerPlacedBet(uint sessionId) public view returns(bool){
+        Session storage currentSession = sessions[sessionId];
+        return currentSession.playerHasPlacedBet[msg.sender];
+    }
+
+    function withdraw(uint sessionId) public {
+        Session storage currentSession = sessions[sessionId];
+        uint ammountToBePaid = currentSession.players.length * currentSession.value * 1 ether;
+        require(!currentSession.hasBeenPaid, "This session has been already paid off");
+        require(currentSession.winner == msg.sender, "You are not the winner of this session.");
+        require(address(this).balance >= ammountToBePaid, "Not enough funds to make the payoff. Come back later");
+        msg.sender.transfer(ammountToBePaid);
+        currentSession.hasBeenPaid = true;
     }
 
     function _calculateWinner(uint sessionId) private view returns(address){
