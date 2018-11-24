@@ -1,0 +1,7 @@
+{
+  "name": "min-num-fe",
+  "short_name": "min-num-fe",
+  "description": "App for integrating with min-num-bet smart contract",
+  "start_url": "/",
+  "display": "standalone"
+}
