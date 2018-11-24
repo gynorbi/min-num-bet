@@ -65,6 +65,10 @@ contract MinNumBet{
         return currentSession.value;
     }
 
+    function getSessionsLength() public view returns(uint){
+        return sessions.length;
+    }
+
     function hasPlayerPlacedBet(uint sessionId) public view returns(bool){
         Session storage currentSession = sessions[sessionId];
         return currentSession.playerHasPlacedBet[msg.sender];
