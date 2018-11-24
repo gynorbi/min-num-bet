@@ -84,7 +84,13 @@ class MinNumFeApp extends PolymerElement {
   }
   async initSessionList(){
     var bettingInstance = await this.contracts.MinNumBet.deployed();
-    return await bettingInstance.getSessions().response;
+    var sessionsLengthBigNumber = await bettingInstance.getSessionsLength();
+    var sessionsLength = sessionsLengthBigNumber.toNumber();
+    var sessionIds = [];
+    for(var i=0; i<sessionsLength; i++) {
+      sessionIds.push(i);
+    }
+    return sessionIds;
   }
 }
 
