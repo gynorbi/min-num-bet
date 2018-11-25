@@ -1,8 +1,12 @@
 import { html, PolymerElement } from '@polymer/polymer/polymer-element.js';
 import '@polymer/paper-listbox/paper-listbox.js';
 import '@polymer/iron-ajax/iron-request.js';
-import '@polymer/paper-item/paper-icon-item.js';
-import '../session-details/session-details.js';
+import '@polymer/iron-icon/iron-icon.js';
+import '@polymer/iron-icons/iron-icons.js';
+import '@polymer/paper-input/paper-input.js';
+import '@polymer/paper-button/paper-button.js';
+import '@polymer/paper-item';
+import '@polymer/iron-collapse/iron-collapse.js';
 
 /**
  * @customElement
@@ -15,17 +19,19 @@ class MinNumFeApp extends PolymerElement {
         :host {
           display: block;
         }
+        
       </style>
       <iron-request id="getContract"></iron-request>
       <h1>All sessions</h1>
+        <div id="user">
+          <h3>Current user: [[currentUserAccount]]</h2>
+        </div>
         <template is="dom-repeat" items=[[sessions]] as="session">
           <paper-icon-item focused="{{session.selected}}">
             <iron-icon icon="[[getSessionStatus(session)]]" slot="item-icon"></iron-icon>
             <paper-item-body>
               <span><b>Owner: [[session.owner]]</b></span> <span>Bet of this session: [[session.value]] ETH</span>
-              <dom-if if="[[isThereWinner(session)]]">
-                <span>Winner: [[session.winner]]</span>
-              </dom-if>
+              <span>Winner: [[session.winner]]</span>
               <iron-collapse opened="{{session.selected || 1}}">
                 <h3>Bets</h3>
                 <table>
@@ -45,6 +51,12 @@ class MinNumFeApp extends PolymerElement {
                   </tbody>
                 </table>
               </iron-collapse>
+              <div>
+                <paper-input label="Your bet" value={{session.newBet}} required  auto-validate pattern="[0-9]*" error-message="Numbers only" invalid="{{session.invalidBet}}"></paper-input>
+                <paper-button raised on-click="submitBet" session-id="[[session.id]]" bet="[[session.newBet]]" value="[[session.value]]" disabled="[[disableBet(session.invalidBet, session.newBet.length)]]">Bet</paper-button>
+                <paper-button raised on-click="closeSession" session-id="[[session.id]]" disabled="[[disableCloseSession(session.isOpen,session.owner)]]">Close session</paper-button>
+                <paper-button raised on-click="withdraw" session-id="[[session.id]]" disabled="[[disableWithdraw(session.hasBeenPaid, session.winner)]]">Withdraw</paper-button>
+              </div>
             </paper-item-body>
           </paper-icon-item>
         </template>
@@ -66,6 +78,9 @@ class MinNumFeApp extends PolymerElement {
       bettingInstance: {
         type: Object,
         value: {}
+      },
+      currentUserAccount: {
+        type: String
       }
     };
   }
@@ -76,9 +91,10 @@ class MinNumFeApp extends PolymerElement {
   async init() {
     await this.initWeb3();
     await this.initContract();
+    this.currentUserAccount = web3.eth.accounts[0];
     this.sessions = await this.initSessionList();
-    //this.addEventListener(this.bettingInstance.NewBet,this.updateSession);
-    var t = this.bettingInstance.NewBet(this.updateSession);
+    //this.addEventListener(this.bettingInstance.NewBet,this.updateBet);
+    //this.bettingInstance.NewBet(-1,-1,this.updateBet);
   }
   async initWeb3() {
     // Modern dapp browsers...
@@ -134,27 +150,77 @@ class MinNumFeApp extends PolymerElement {
       bets.push({ player: playerData[0], bet: playerData[1].toNumber() });
     }
     return {
-      id:sessionId,
-      isOpen:sessionData[0],
-      owner:sessionData[1],
-      winner:sessionData[2],
-      value:sessionData[3].toNumber(),
-      hasBeenPaid:sessionData[4],
-      bets:bets
+      id: sessionId,
+      isOpen: sessionData[0],
+      owner: sessionData[1],
+      winner: sessionData[2],
+      value: web3.fromWei(sessionData[3], 'ether').toNumber(),
+      hasBeenPaid: sessionData[4],
+      bets: bets
     }
   }
-  getSessionStatus(session){
-    return session.isOpen ? "check" : session.hasBeenPaid ? "euro-symbol":"block";
+  getSessionStatus(session) {
+    return session.isOpen ? "check" : session.hasBeenPaid ? "euro-symbol" : "block";
   }
-  isThereWinner(session){
-    return !session.winner === '0x0000000000000000000000000000000000000000';
+  isThereWinner(session) {
+    return session.winner !== '0x0000000000000000000000000000000000000000';
   }
-  showBet(betAmmount){
+  showBet(betAmmount) {
     return betAmmount < 0 ? "*****" : betAmmount;
   }
-  updateSession(error,event){
-    if(!error){
-      alert(event.args.sessionId.toNumber()+"|"+event.args.playerId.toNumber());
+  disableBet(isBetInvalid, betInputLength) {
+    if (isBetInvalid === undefined) return true;
+    return isBetInvalid || betInputLength < 1;
+  }
+  disableCloseSession(isOpen, owner) {
+    return !isOpen || owner !== web3.eth.accounts[0];
+  }
+  disableWithdraw(hasBeenPaid, winner) {
+    return hasBeenPaid || winner !== web3.eth.accounts[0];
+
+  }
+  async updateBet(error, event) {
+    if (!error) {
+      var sessionId = event.args.sessionId.toNumber();
+      var playerId = event.args.playerId.toNumber();
+      if (sessionId > -1 && playerId > -1) {
+        var playerData = await this.bettingInstance.getPlayerData(sessionId, playerId);
+        this.sessions[sessionId].bets.push({ player: playerData[0], bet: playerData[1].toNumber() });
+      }
+    }
+  }
+  async submitBet(event) {
+    var sessionId = event.currentTarget.sessionId;
+    var bet = event.currentTarget.bet;
+    var value = event.currentTarget.value;
+    console.log(`Bet: ${bet}, SessionId: ${sessionId}, Value in ether: ${value}`);
+    try {
+      await this.bettingInstance.placeBet(sessionId, bet, { value: web3.toWei(value, 'ether') });
+    }
+    catch (error) {
+      console.log("Somthing went wrong: " + error);
+    }
+  }
+
+  async closeSession(event) {
+    var sessionId = event.currentTarget.sessionId;
+    console.log(`Closing session with id '${sessionId}'.`);
+    try {
+      await this.bettingInstance.closeSession(sessionId);
+    }
+    catch (error) {
+      console.log("Somthing went wrong: " + error);
+    }
+  }
+
+  async withdraw(event) {
+    var sessionId = event.currentTarget.sessionId;
+    console.log(`Withdrawing winnings form session with id '${sessionId}'.`);
+    try {
+      await this.bettingInstance.withdraw(sessionId);
+    }
+    catch (error) {
+      console.log("Somthing went wrong: " + error);
     }
   }
 }
