@@ -103,7 +103,7 @@ class MinNumFeApp extends PolymerElement {
               <paper-card>
               <div class="card-content">
                 <iron-icon icon="[[getSessionStatus(session)]]" slot="item-icon"></iron-icon>
-                  <span><b>Owner: [[session.owner]]</b></span> <span>Bet of this session: [[session.value]] ETH</span>
+                  <span><b>Owner: [[session.owner]]</b></span> <span>Bet of this session: [[transformToEther(session.value)]] ETH</span>
                   <span>Winner: [[session.winner]]</span>
                   <iron-collapse opened="{{session.selected || 1}}">
                     <h3>Bets</h3>
@@ -181,7 +181,7 @@ class MinNumFeApp extends PolymerElement {
     this.currentUserAccount = web3.eth.accounts[0];
     this.sessions = await this.initSessionList();
     //this.addEventListener(this.bettingInstance.NewBet,this.updateBet);
-    //this.bettingInstance.NewBet(-1,-1,this.updateBet);
+    this.bettingInstance.NewBet({sessionId:-1,playerId:-1},this.updateBet.bind(this));
   }
   async initWeb3() {
     // Modern dapp browsers...
@@ -241,7 +241,7 @@ class MinNumFeApp extends PolymerElement {
       isOpen: sessionData[0],
       owner: sessionData[1],
       winner: sessionData[2],
-      value: web3.fromWei(sessionData[3], 'ether').toNumber(),
+      value: sessionData[3].toNumber(),
       hasBeenPaid: sessionData[4],
       bets: bets
     }
@@ -282,7 +282,7 @@ class MinNumFeApp extends PolymerElement {
     var value = event.currentTarget.value;
     console.log(`Bet: ${bet}, SessionId: ${sessionId}, Value in ether: ${value}`);
     try {
-      await this.bettingInstance.placeBet(sessionId, bet, { value: web3.toWei(value, 'ether') });
+      await this.bettingInstance.placeBet(sessionId, bet, { value: value });
     }
     catch (error) {
       console.log("Somthing went wrong: " + error);
