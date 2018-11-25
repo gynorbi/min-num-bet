@@ -44,8 +44,8 @@ contract MinNumBet{
         Session storage currentSession = sessions[sessionId];
         require(currentSession.isOpen,"You can't place a bet on a closed session");
         require(!currentSession.playerHasPlacedBet[msg.sender],"You have already placed a bet in this session");
-        require(number >= 0, "You must bet a number that is greater than 0");
-        require(msg.value == currentSession.value * 1 ether, "In order to bet in this session you need to send the correct value in ether");
+        require(number >= 0 && number < 1000000, "You must bet a number that is greater than or equal to 0 and less than 10^6");
+        require(msg.value == currentSession.value, "In order to bet in this session you need to send the correct value in Wei");
         currentSession.bets.push(number);
         uint playerId = currentSession.players.push(msg.sender) - 1;
         currentSession.playerToBet[msg.sender] = number;
@@ -104,7 +104,7 @@ contract MinNumBet{
 
     function withdraw(uint sessionId) public {
         Session storage currentSession = sessions[sessionId];
-        uint ammountToBePaid = currentSession.players.length * currentSession.value * 1 ether;
+        uint ammountToBePaid = currentSession.players.length * currentSession.value;
         require(!currentSession.hasBeenPaid, "This session has been already paid off");
         require(currentSession.winner == msg.sender, "You are not the winner of this session.");
         require(address(this).balance >= ammountToBePaid, "Not enough funds to make the payoff. Come back later");
