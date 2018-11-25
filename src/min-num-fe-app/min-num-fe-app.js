@@ -8,6 +8,14 @@ import '@polymer/paper-button/paper-button.js';
 import '@polymer/paper-item';
 import '@polymer/iron-collapse/iron-collapse.js';
 
+import '@polymer/paper-fab/paper-fab.js';
+import '@polymer/paper-card/paper-card.js';
+
+import '@polymer/app-layout/app-layout.js';
+
+import '@polymer/paper-dialog/paper-dialog.js';
+
+
 /**
  * @customElement
  * @polymer
@@ -19,47 +27,126 @@ class MinNumFeApp extends PolymerElement {
         :host {
           display: block;
         }
+        app-header {
+          color: #fff;
+          background-color: #42cbf4;
+          
+        }
+        paper-fab {
+          position: fixed;
+          right: 24px;
+          bottom: 24px;
+          --paper-fab-background: #42cbf4;
+          --paper-fab-keyboard-focus-background: #DF4448;
+        }
+        .content {
+          display: block;
+          position: relative;
+          max-width: 1000px;
+          margin: 5px auto;
+        }
+        .card-container {
+          display: inline-block;
+          width: 33.33%;
+          color: black;
+          text-decoration: none;
+        }
+        paper-card {
+          display: block;
+          margin: 5px;
+        }
+        paper-card h2 {
+          margin: 4px;
+          font-weight: normal;
+        }
+        paper-card p {
+          margin: 4px;
+          color: #999;
+        }
         
+        @media (max-width: 960px) {
+          .content {
+            max-width: 800px;
+          }
+          .card-container {
+            width: 50%;
+          }
+        }
+
+        @media (max-width: 719px) {
+          app-toolbar {
+            height: 60px;
+          }
+          [main-title] {
+            top: -60px;
+            background-size: 90px;
+          }
+          .content {
+            max-width: 400px;
+          }
+          .card-container {
+            width: 100%;
+          }
+        }
       </style>
       <iron-request id="getContract"></iron-request>
-      <h1>All sessions</h1>
-        <div id="user">
-          <h3>Current user: [[currentUserAccount]]</h2>
-        </div>
-        <template is="dom-repeat" items=[[sessions]] as="session">
-          <paper-icon-item focused="{{session.selected}}">
-            <iron-icon icon="[[getSessionStatus(session)]]" slot="item-icon"></iron-icon>
-            <paper-item-body>
-              <span><b>Owner: [[session.owner]]</b></span> <span>Bet of this session: [[session.value]] ETH</span>
-              <span>Winner: [[session.winner]]</span>
-              <iron-collapse opened="{{session.selected || 1}}">
-                <h3>Bets</h3>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Player</th>
-                      <th>Bet</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                  <template is="dom-repeat" items=[[session.bets]] as="bet">
-                    <tr>
-                      <td>[[bet.player]]</td>
-                      <td>[[showBet(bet.bet)]]</td>
-                    </tr>
-                  </template>
-                  </tbody>
-                </table>
-              </iron-collapse>
-              <div>
-                <paper-input label="Your bet" value={{session.newBet}} required  auto-validate pattern="[0-9]*" error-message="Numbers only" invalid="{{session.invalidBet}}"></paper-input>
-                <paper-button raised on-click="submitBet" session-id="[[session.id]]" bet="[[session.newBet]]" value="[[session.value]]" disabled="[[disableBet(session.invalidBet, session.newBet.length)]]">Bet</paper-button>
-                <paper-button raised on-click="closeSession" session-id="[[session.id]]" disabled="[[disableCloseSession(session.isOpen,session.owner)]]">Close session</paper-button>
-                <paper-button raised on-click="withdraw" session-id="[[session.id]]" disabled="[[disableWithdraw(session.hasBeenPaid, session.winner)]]">Withdraw</paper-button>
+
+        <app-header-layout>
+          <app-header condenses fixed shadow slot="header">
+            <app-toolbar>
+              <div main-title spacer>Minimum Number Betting</div>
+              <div id="user">Current user: [[currentUserAccount]]</div>
+            </app-toolbar>
+          </app-header>
+          <div class="content">
+            <template is="dom-repeat" items=[[sessions]] as="session">
+              <paper-card>
+              <div class="card-content">
+                <iron-icon icon="[[getSessionStatus(session)]]" slot="item-icon"></iron-icon>
+                  <span><b>Owner: [[session.owner]]</b></span> <span>Bet of this session: [[session.value]] ETH</span>
+                  <span>Winner: [[session.winner]]</span>
+                  <iron-collapse opened="{{session.selected || 1}}">
+                    <h3>Bets</h3>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Player</th>
+                          <th>Bet</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                      <template is="dom-repeat" items=[[session.bets]] as="bet">
+                        <tr>
+                          <td>[[bet.player]]</td>
+                          <td>[[showBet(bet.bet)]]</td>
+                        </tr>
+                      </template>
+                      </tbody>
+                    </table>
+                  </iron-collapse>
+                  <div>
+                    <paper-input label="Your bet" value={{session.newBet}} required  auto-validate pattern="[0-9]*" error-message="Numbers only" invalid="{{session.invalidBet}}"></paper-input>
+                    <paper-button raised on-click="submitBet" session-id="[[session.id]]" bet="[[session.newBet]]" value="[[session.value]]" disabled="[[disableBet(session.invalidBet, session.newBet.length)]]">Bet</paper-button>
+                    <paper-button raised on-click="closeSession" session-id="[[session.id]]" disabled="[[disableCloseSession(session.isOpen,session.owner)]]">Close session</paper-button>
+                    <paper-button raised on-click="withdraw" session-id="[[session.id]]" disabled="[[disableWithdraw(session.hasBeenPaid, session.winner)]]">Withdraw</paper-button>
+                  </div>
               </div>
-            </paper-item-body>
-          </paper-icon-item>
-        </template>
+              </paper-card>
+            </template>
+          </div>
+        </app-header-layout>
+        <paper-dialog id="newSession" modal on-iron-overlay-closed="createSession" on-iron-overlay-opened="cleanupNewSessionDialog" value="[[sessionValue]]">
+          <h2>Create new session</h2>
+          <p>Specify here how much you would like each player to bet in this session</p>
+          <paper-input id="betInput" autofocus required auto-validate pattern="[0-9]*" label="Bet in Wei" value="{{sessionValue}}" invalid={{invalidBet}}></paper-input>
+          <paper-input disabled label="Bet in ether" value="[[transformToEther(sessionValue)]]"></paper-input>
+          <div class="buttons">
+            <paper-button dialog-dismiss>Cancel</paper-button>
+            <paper-button dialog-confirm disabled=[[invalidBet]] >Create session</paper-button>
+          </div>
+        </paper-dialog>
+        <paper-fab icon="add" on-tap="openNewSessionDialog"></paper-fab>
+        
     `;
   }
   static get properties() {
@@ -200,6 +287,31 @@ class MinNumFeApp extends PolymerElement {
     catch (error) {
       console.log("Somthing went wrong: " + error);
     }
+  }
+
+  async createSession(event) {
+    var value = event.currentTarget.value;
+    event.currentTarget.value = "";
+    if (event.detail.confirmed && value > 0) {
+      try {
+        await this.bettingInstance.createNewSession(value);
+      }
+      catch (error) {
+        console.log("Somthing went wrong: " + error);
+      }
+    }
+  }
+
+  openNewSessionDialog() {
+    this.$.newSession.open();
+  }
+
+  cleanupNewSessionDialog(){
+    this.$.betInput.value="";
+  }
+
+  transformToEther(betInWei){
+    return web3.fromWei(betInWei,'ether');
   }
 
   async closeSession(event) {
