@@ -16,7 +16,8 @@ contract MinNumBet{
     
     Session[] public sessions;
 
-    event NewBet(uint sessionId, uint playerId);
+    event NewBet(uint indexed sessionId, uint playerId);
+    event NewSession(uint sessionId);
 
     function allSessionsClosed() public view returns (bool){
         for (uint i = 0; i<sessions.length; i++){
@@ -29,7 +30,9 @@ contract MinNumBet{
     function createNewSession(uint value) public returns (uint) {
         require(value > 0, "Can't create session with 0 value");
         Session memory newSession = Session(true, msg.sender, 0, new uint[](0), new address[](0), value, false);
-        return sessions.push(newSession) - 1;
+        uint newSessionId = sessions.push(newSession) - 1;
+        emit NewSession(newSessionId);
+        return newSessionId;
     }
     function closeSession(uint sessionId) public {
         Session storage currentSession = sessions[sessionId];
