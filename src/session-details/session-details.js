@@ -21,39 +21,46 @@ class SessionDetails extends PolymerElement {
         }
         table {
           table-layout: fixed;
-          width: 70%;
+          width: 100%;
           border-collapse: collapse;
         }
         
         thead th:nth-child(1) {
           width: 70%;
+          text-align: left;
         }
         
         thead th:nth-child(2) {
           width: 30%;
+          text-align: right;
         }
         
         th, td {
-          padding: 20px;
-        }
-
-        thead td {
-          text-align: center;
+          padding: 5px;
         }
 
         tbody td {
-          text-align: left;
+          text-align: right;
         }
         
         .card-container {
-          display: inline-block;
-          width: 33.33%;
           color: black;
           text-decoration: none;
+          padding: 20px;
+        }
+        .card-container .left{
+          display: inline-block;
+          width: 50%;
+          float:left;
+        }
+        .card-container .right{
+          display: inline-block;
+          width: 50%;
+          clear:float;
         }
         paper-card {
           display: block;
-          margin: 5px;
+          margin: 10px;
         }
         paper-card h2 {
           margin: 4px;
@@ -61,7 +68,6 @@ class SessionDetails extends PolymerElement {
         }
         paper-card p {
           margin: 4px;
-          color: #999;
         }
         @media (max-width: 960px) {
           .card-container {
@@ -78,35 +84,38 @@ class SessionDetails extends PolymerElement {
       <iron-request id="getContract"></iron-request>
       
       <paper-card>
-        <div class="card-content">
-          <iron-icon icon="[[getSessionStatus()]]" slot="item-icon"></iron-icon>
-            <span><b>Owner: [[owner]]</b></span> <span>Stake of this session: [[transformToEther(sessionValue)]] ETH</span>
-            <span>Winner: [[winner]]</span>
-            <iron-collapse opened="{{selected || 1}}">
-              <h3>Bets</h3>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Player</th>
-                    <th>Bet</th>
-                  </tr>
-                </thead>
-                <tbody>
-                <template is="dom-repeat" items=[[bets]] as="bet">
-                  <tr>
-                    <td>[[bet.player]]</td>
-                    <td>[[showBet(bet.bet)]]</td>
-                  </tr>
-                </template>
-                </tbody>
-              </table>
-            </iron-collapse>
-              <div>
-                <paper-input id="sendBet" label="Your bet" value={{currentBet}} required  auto-validate pattern="[0-9]*" error-message="Numbers only" invalid="{{invalidBet}}"></paper-input>
-                <paper-button raised on-click="submitBet" session-id="[[id]]" bet="[[currentBet]]" session-value="[[sessionValue]]" disabled="[[disableBet(invalidBet, currentBet.length)]]">Bet</paper-button>
-                <paper-button raised on-click="closeSession" session-id="[[id]]" disabled="[[disableCloseSession(isOpen,owner)]]">Close session</paper-button>
-                <paper-button raised on-click="withdraw" session-id="[[id]]" disabled="[[disableWithdraw(hasBeenPaid, winner)]]">Withdraw</paper-button>
-              </div>
+        <div class="card-container">
+          <iron-icon icon="[[getSessionStatus()]]"></iron-icon>
+          <h2>Session [[id]]</h2>
+          <div class="left">
+            <p>Owner: [[owner]]</p> 
+            <p>Stake of this session: [[transformToEther(sessionValue)]] ETH</p>
+            <p>Winner: [[winner]]</p>
+          </div>
+          <div class="right">
+            <table>
+              <thead>
+                <tr>
+                  <th>Player</th>
+                  <th>Bet</th>
+                </tr>
+              </thead>
+              <tbody>
+              <template is="dom-repeat" items=[[bets]] as="bet">
+                <tr>
+                  <td>[[bet.player]]</td>
+                  <td>[[showBet(bet.bet)]]</td>
+                </tr>
+              </template>
+              </tbody>
+            </table>
+          </div>
+            <div>
+              <paper-input id="sendBet" label="Your bet" value={{currentBet}} required  auto-validate pattern="[0-9]*" error-message="Numbers only" invalid="{{invalidBet}}"></paper-input>
+              <paper-button raised on-click="submitBet" session-id="[[id]]" bet="[[currentBet]]" session-value="[[sessionValue]]" disabled="[[disableBet(invalidBet, currentBet.length)]]">Bet</paper-button>
+              <paper-button raised on-click="closeSession" session-id="[[id]]" disabled="[[disableCloseSession(isOpen,owner)]]">Close session</paper-button>
+              <paper-button raised on-click="withdraw" session-id="[[id]]" disabled="[[disableWithdraw(hasBeenPaid, winner)]]">Withdraw</paper-button>
+            </div>
         </div>
       </paper-card>
     `;
