@@ -18,6 +18,8 @@ contract MinNumBet{
 
     event NewBet(uint indexed sessionId, uint playerId);
     event NewSession(uint sessionId);
+    event ClosedSession(uint indexed sessionId, bool isOpen, address winner);
+    event WithdrawnStake(uint indexed sessionId, bool hasBeenPaid);
 
     function allSessionsClosed() public view returns (bool){
         for (uint i = 0; i<sessions.length; i++){
@@ -41,6 +43,7 @@ contract MinNumBet{
         require(currentSession.bets.length > 0, "You should have at least one bet before closing the session");
         currentSession.winner = _calculateWinner(sessionId);
         currentSession.isOpen = false;
+        emit ClosedSession(sessionId, currentSession.isOpen, currentSession.winner);
     }
     
     function placeBet(uint sessionId, uint number) public payable{
@@ -113,6 +116,7 @@ contract MinNumBet{
         require(address(this).balance >= ammountToBePaid, "Not enough funds to make the payoff. Come back later");
         msg.sender.transfer(ammountToBePaid);
         currentSession.hasBeenPaid = true;
+        emit WithdrawnStake(sessionId, currentSession.hasBeenPaid);
     }
 
     function _calculateWinner(uint sessionId) private view returns(address){
