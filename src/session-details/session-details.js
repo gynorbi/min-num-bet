@@ -158,6 +158,9 @@ class SessionDetails extends PolymerElement {
     await this.initWeb3();
     await this.initContract();
     this.bettingInstance.NewBet({sessionId:this.id},{fromBlock:'latest'},this.updateBets.bind(this));
+    this.bettingInstance.ClosedSession({sessionId:this.id},{fromBlock:'latest'},this.updateClosedSession.bind(this));  
+    this.bettingInstance.WithdrawnStake({sessionId:this.id},{fromBlock:'latest'},this.updateWithdrawnSession.bind(this));  
+      
   }
   async initWeb3() {
     // Modern dapp browsers...
@@ -226,6 +229,7 @@ class SessionDetails extends PolymerElement {
       }
     }
   }
+  
   async submitBet(event) {
     var sessionId = event.currentTarget.sessionId;
     var bet = event.currentTarget.bet;
@@ -249,6 +253,22 @@ class SessionDetails extends PolymerElement {
       console.log("Somthing went wrong: " + error);
     }
   }
+  async updateClosedSession(error, event){
+    if (!error) {
+      this.isOpen = event.args.isOpen;
+      this.winner = event.args.winner;
+      for (var i = 0; i < this.bets.length; i++) {
+        var playerData = await this.bettingInstance.getPlayerData(this.id, i);
+        this.set(['bets',i,'bet'],playerData[1].toNumber());
+      }
+    }
+  }
+  async updateWithdrawnSession(error, event){
+    if (!error) {
+      this.hasBeenPaid = event.args.hasBeenPaid;
+    }
+  }
+  
   async withdraw(event) {
     var sessionId = event.currentTarget.sessionId;
     console.log(`Withdrawing winnings form session with id '${sessionId}'.`);
