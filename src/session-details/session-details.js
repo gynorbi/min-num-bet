@@ -48,6 +48,9 @@ class SessionDetails extends PolymerElement {
           text-decoration: none;
           padding: 20px;
         }
+        .card-container .toprow{
+          display: inline-block;
+        }
         .card-container .left{
           display: inline-block;
           width: 50%;
@@ -57,6 +60,14 @@ class SessionDetails extends PolymerElement {
           display: inline-block;
           width: 50%;
           clear:float;
+        }
+        .buttons {
+          display:block;
+          width:100%;
+        }
+        .buttons paper-input{
+          display:inline-block;
+          width: 50%;
         }
         paper-card {
           display: block;
@@ -68,6 +79,9 @@ class SessionDetails extends PolymerElement {
         }
         paper-card p {
           margin: 4px;
+        }
+        .visibility-hidden{
+          visibility: hidden
         }
         @media (max-width: 960px) {
           .card-container {
@@ -85,37 +99,40 @@ class SessionDetails extends PolymerElement {
       
       <paper-card>
         <div class="card-container">
-          <iron-icon icon="[[getSessionStatus()]]"></iron-icon>
           <h2>Session [[id]]</h2>
-          <div class="left">
-            <p>Owner: [[owner]]</p> 
-            <p>Stake of this session: [[transformToEther(sessionValue)]] ETH</p>
-            <p>Winner: [[winner]]</p>
-          </div>
-          <div class="right">
-            <table>
-              <thead>
-                <tr>
-                  <th>Player</th>
-                  <th>Bet</th>
-                </tr>
-              </thead>
-              <tbody>
-              <template is="dom-repeat" items=[[bets]] as="bet">
-                <tr>
-                  <td>[[bet.player]]</td>
-                  <td>[[showBet(bet.bet)]]</td>
-                </tr>
-              </template>
-              </tbody>
-            </table>
-          </div>
-            <div>
-              <paper-input id="sendBet" label="Your bet" value={{currentBet}} required  auto-validate pattern="[0-9]*" error-message="Numbers only" invalid="{{invalidBet}}"></paper-input>
-              <paper-button raised on-click="submitBet" session-id="[[id]]" bet="[[currentBet]]" session-value="[[sessionValue]]" disabled="[[disableBet(invalidBet, currentBet.length)]]">Bet</paper-button>
-              <paper-button raised on-click="closeSession" session-id="[[id]]" disabled="[[disableCloseSession(isOpen,owner)]]">Close session</paper-button>
-              <paper-button raised on-click="withdraw" session-id="[[id]]" disabled="[[disableWithdraw(hasBeenPaid, winner)]]">Withdraw</paper-button>
+          <div class="toprow">
+            <div class="left">
+              <p>Owner: [[owner]]</p> 
+              <p>Stake of this session: [[transformToEther(sessionValue)]] ETH</p>
+              <p>Winner: [[winner]]</p>
             </div>
+            <div class="right">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Player</th>
+                    <th>Bet</th>
+                  </tr>
+                </thead>
+                <tbody>
+                <template is="dom-repeat" items=[[bets]] as="bet">
+                  <tr>
+                    <td>[[bet.player]]</td>
+                    <td>[[showBet(bet.bet)]]</td>
+                  </tr>
+                </template>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="buttons">
+            <span class$="[[canYouBet(bets.length)]]">
+              <paper-input label="Your bet" value={{currentBet}} required  auto-validate pattern="[0-9]*" error-message="Numbers only" invalid="{{invalidBet}}"></paper-input>
+              <paper-button raised on-click="submitBet" session-id="[[id]]" bet="[[currentBet]]" session-value="[[sessionValue]]" disabled="[[disableBet(invalidBet, currentBet.length)]]">Bet</paper-button>
+            </span>
+            <paper-button raised on-click="closeSession" session-id="[[id]]" disabled="[[disableCloseSession(isOpen,bets.length,owner)]]">Close session</paper-button>
+            <paper-button raised on-click="withdraw" session-id="[[id]]" disabled="[[disableWithdraw(hasBeenPaid, winner)]]">Withdraw</paper-button>
+          </div>
         </div>
       </paper-card>
     `;
@@ -154,6 +171,9 @@ class SessionDetails extends PolymerElement {
       },
       bets: {
         type: Array
+      },
+      currentUserAccount: {
+        type: String
       }
     };
   }
@@ -218,15 +238,21 @@ class SessionDetails extends PolymerElement {
     if (isBetInvalid === undefined) return true;
     return isBetInvalid || betInputLength < 1;
   }
-  disableCloseSession() {
-    return !this.isOpen || this.owner !== web3.eth.accounts[0];
+  disableCloseSession(isOpen, betsLength, owner) {
+    return !isOpen || betsLength == 0 || owner !== web3.eth.accounts[0];
   }
-  disableWithdraw() {
-    return this.hasBeenPaid || this.winner !== web3.eth.accounts[0];
+  disableWithdraw(hasBeenPaid,winner) {
+    return hasBeenPaid || winner !== web3.eth.accounts[0];
 
   }
   transformToEther(betInWei){
     return web3.fromWei(betInWei,'ether');
+  }
+  canYouBet(){
+    for(var i=0;i<this.bets.length;i++){
+      if(this.bets[i].player === this.currentUserAccount) return "visibility-hidden";
+    }
+    return "";
   }
   async updateBets(error, event) {
     if (!error) {
@@ -250,7 +276,7 @@ class SessionDetails extends PolymerElement {
     catch (error) {
       console.log("Somthing went wrong: " + error);
     }
-    this.$.sendBet.value="";
+    //this.$.sendBet.value="";
   }
   async closeSession(event) {
     var sessionId = event.currentTarget.sessionId;

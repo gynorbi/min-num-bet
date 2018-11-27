@@ -83,6 +83,7 @@ class MinNumFeApp extends PolymerElement {
                 session-value="[[session.value]]"
                 has-been-paid="[[session.hasBeenPaid]]"
                 bets="[[session.bets]]"
+                current-user-account="[[currentUserAccount]]"
                 >
               </session-details>
             </template>
